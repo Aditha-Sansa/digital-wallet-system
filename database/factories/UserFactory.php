@@ -23,7 +23,10 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $uuidV7 = (string) Str::orderedUuid();
+
         return [
+            'uuid' => $uuidV7,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),

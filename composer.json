@@ -13,7 +13,8 @@
         "laravel/framework": "^12.0",
         "laravel/horizon": "^5.41",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "league/csv": "^9.28"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
