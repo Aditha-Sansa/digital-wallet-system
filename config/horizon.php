@@ -214,16 +214,42 @@ return [
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
-                'balanceMaxShift' => 1,
-                'balanceCooldown' => 3,
+            'bulk-main-queue-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['bulk-main-queue'],
+                'balance' => 'simple',
+                'processes' => 2,
+                'tries' => 1,
+            ],
+
+            'bulk-chunks-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['bulk-chunks'],
+                'balance' => 'auto',
+                'minProcesses' => 5,
+                'maxProcesses' => 50,
+                'tries' => 3,
+                'timeout' => 120,
             ],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 2,
+            'bulk-main-queue-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['bulk-main-queue'],
+                'balance' => 'simple',
+                'processes' => 1,
+                'tries' => 1,
+            ],
+
+            'bulk-chunks-supervisor' => [
+                'connection' => 'redis',
+                'queue' => ['bulk-chunks'],
+                'balance' => 'auto',
+                'minProcesses' => 2,
+                'maxProcesses' => 10,
+                'tries' => 3,
+                'timeout' => 120,
             ],
         ],
     ],

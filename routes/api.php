@@ -8,7 +8,5 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/test', [WalletCreditController::class, 'test']);
-Route::get('/generate-credits', [WalletCreditController::class, 'generateWalletCredits']);
-Route::post('/process-credits', [WalletCreditController::class, 'store']);
+Route::post('/wallet/bulk-credit', [WalletCreditController::class, 'store']);
 

@@ -65,8 +65,8 @@ class SeedUsersAndExportCsv extends Command
 
                 $users[] = [
                     'uuid' => $uuid,
-                    'name' => "User {$offset}{$i}",
-                    'email' => "user{$offset}{$i}@example.com",
+                    'name' => "FN User {$offset}{$i}",
+                    'email' => "user{$offset}{$i}@gmail.com",
                     'email_verified_at' => $now,
                     'password' => $hashedPassword,
                     'remember_token' => Str::random(10),
