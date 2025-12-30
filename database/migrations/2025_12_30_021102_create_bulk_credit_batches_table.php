@@ -18,7 +18,6 @@ return new class extends Migration
             $table->unsignedInteger('processed_chunks')->default(0);
             $table->unsignedInteger('successful_chunks')->default(0);
             $table->unsignedInteger('failed_chunks')->default(0);
-            $table->text('error_info')->nullable();
             $table->enum('status', [
                 'PENDING',
                 'PROCESSING',

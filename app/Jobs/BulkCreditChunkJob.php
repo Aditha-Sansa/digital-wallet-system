@@ -6,11 +6,15 @@ use App\DTOs\BulkCreditRowDTO;
 use App\Models\BulkCreditBatch;
 use App\Models\BulkCreditItem;
 use App\Models\CreditActivityLog;
+use App\Models\User;
 use App\Models\WalletLedgerTransaction;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 class BulkCreditChunkJob implements ShouldQueue
@@ -38,15 +42,46 @@ class BulkCreditChunkJob implements ShouldQueue
     {
         $successCount = 0;
         $failureCount = 0;
+        $invalidCount = 0;
 
         foreach ($this->rows as $row) {
             try {
                 $dto = BulkCreditRowDTO::fromArray($row);
 
-                $rowHash = hash(
-                    'sha256',
-                    $this->activityId.$dto->uuid.number_format($dto->amount, 2, '.', '')
-                );
+            } catch (\Throwable $th) {
+
+                $invalidCount++;
+
+                // Need a better way to log this concern in production
+                Log::error([
+                    'reason' => $th->getMessage(),
+                    'affected_record' => $row,
+                ]);
+
+                continue;
+            }
+
+            if (! $this->userExists($dto->uuid)) {
+                $invalidCount++;
+
+                Log::error([
+                    'reason' => "The user with uuid: {$dto->uuid} doesn't exist.",
+                    'affected_record' => $row,
+                ]);
+
+                continue;
+            }
+
+            $rowHash = hash(
+                'sha256',
+                $this->activityId.$dto->uuid.number_format($dto->amount, 2, '.', '')
+            );
+
+            try {
+                // This is for testing failed credit records.
+                if (in_array($dto->uuid, config('bulk_credit.fail_user_ids'), true)) {
+                    throw new RuntimeException('Emulating failure for testing');
+                }
 
                 $item = BulkCreditItem::firstOrCreate(
                     [
@@ -84,29 +119,31 @@ class BulkCreditChunkJob implements ShouldQueue
 
                 $successCount++;
 
-            } catch (Throwable $e) {
-                report($e);
-                $failureCount++;
+            } catch (QueryException|Throwable|RuntimeException $e) {
 
                 BulkCreditItem::updateOrCreate(
                     [
                         'activity_id' => $this->activityId,
-                        'row_hash' => $rowHash ?? Str::uuid(),
+                        'row_hash' => $rowHash,
                     ],
                     [
+                        'user_id' => $dto->uuid,
+                        'amount' => $dto->amount,
                         'status' => 'FAILED',
                         'error_info' => $e->getMessage(),
                     ]
                 );
+
+                $failureCount++;
             }
         }
 
-        $this->reportChunkOutcome($successCount, $failureCount);
+        $this->reportChunkOutcome($successCount, $failureCount, $invalidCount);
     }
 
-    protected function reportChunkOutcome(int $success, int $failed): void
+    protected function reportChunkOutcome(int $success, int $failed, int $invalid): void
     {
-        DB::transaction(function () use ($failed) {
+        DB::transaction(function () use ($success, $failed, $invalid) {
 
             $batch = BulkCreditBatch::where('activity_id', $this->activityId)
                 ->lockForUpdate()
@@ -119,6 +156,14 @@ class BulkCreditChunkJob implements ShouldQueue
             } else {
                 $batch->increment('failed_chunks');
             }
+
+            CreditActivityLog::where('activity_id', $batch->activity_id)
+                ->update([
+                    'invalid_records' => DB::raw("invalid_records + {$invalid}"),
+                    'failed_records' => DB::raw("failed_records + {$failed}"),
+                    'successful_records' => DB::raw("successful_records + {$success}"),
+                    'completed_at' => now(),
+                ]);
 
             if ($batch->processed_chunks >= $batch->total_chunks) {
                 $this->finalizeBatch($batch);
@@ -144,5 +189,14 @@ class BulkCreditChunkJob implements ShouldQueue
                 'process_status' => $activityStatus,
                 'completed_at' => now(),
             ]);
+    }
+
+    protected function userExists(string $userId): bool
+    {
+        $value = Cache::get("user_uuid_exists:{$userId}", function () use ($userId) {
+            return User::where('uuid', $userId)->exists();
+        });
+
+        return $value;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\DTOs;
 
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class BulkCreditRowDTO
 {

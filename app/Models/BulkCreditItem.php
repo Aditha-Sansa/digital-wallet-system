@@ -12,7 +12,7 @@ class BulkCreditItem extends Model
         'amount',
         'row_hash',
         'status',
-        'error_reason',
+        'error_info',
     ];
 
     protected $casts = [

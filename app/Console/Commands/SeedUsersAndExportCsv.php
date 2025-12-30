@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -75,6 +77,13 @@ class SeedUsersAndExportCsv extends Command
                 ];
 
                 $csvRows[] = [$uuid, $amount];
+
+                /*
+                * We cache the user_id below to use in bulk imports to validate user existance before wallet updates.
+                * In a production environment we assume that user meta is cached when users are successfully registered
+                * for various internal use.
+                */
+                Cache::put("user_uuid_exists:{$uuid}", true, now()->plus(minutes: 15));
             }
 
             DB::table('users')->insert($users);

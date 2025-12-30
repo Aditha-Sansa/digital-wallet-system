@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\NewCreditActivityCreated;
+use App\Jobs\RetryFailedCreditItemsJob;
 use App\Models\CreditActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -35,5 +36,26 @@ class WalletCreditController extends Controller
             'activity_id' => $activityId,
             'status' => 'accepted',
         ], 202);
+    }
+
+    public function retry(Request $request)
+    {
+        $validated = $request->validate([
+            'activity_id' => ['required', 'uuid'],
+        ]);
+
+        $activityLog = CreditActivityLog::where('activity_id', $validated['activity_id'])->firstOrFail();
+
+        if (! in_array($activityLog->process_status, ['PARTIALLY_COMPLETED', 'FAILED'])) {
+            return response()->json(['status' => 'Activity is not retryable'], 400);
+        }
+
+        RetryFailedCreditItemsJob::dispatch($activityLog->activity_id)->onQueue('bulk-main-queue');
+
+        $activityLog->update([
+            'process_status' => 'PROCESSING',
+        ]);
+
+        return response()->json(['status' => 'Retry initiated for this credit activity'], 202);
     }
 }

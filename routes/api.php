@@ -9,4 +9,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/wallet/bulk-credit', [WalletCreditController::class, 'store']);
-
+Route::post('/wallet/bulk-credit/retry', [WalletCreditController::class, 'retry']);
