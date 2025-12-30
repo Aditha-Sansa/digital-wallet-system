@@ -1,59 +1,36 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Minimum requirements
 
-## About Laravel
+- PHP 8.2 or above
+- Laravel 12+
+- MySQL 8.0.30+ OR MariaDB 10.11
+- Redis server 7.0.15
+- Linux or Mac env to run this on localhost
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## How to setup / Documentation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Make sure you have the required environment above
+- Git pull https://github.com/Aditha-Sansa/digital-wallet-system.git
+- Run Composer install
+- Run php artisan migrate
+- Dont run any seeders, run the command `php artisan users:seed-and-export`command to seed the users and generate a CSV file of wallet credits for those users. Make sure you have the redis connection working properly. You can add `--total=` flag with a count if you need to seed less than 100K records.
+- Use a API client tool to interact with the API. I used Insomnia
+- The generated CSV is available in `storage\app\exports` folder as `users_wallet_seed.csv`
+- Upload it to the bulk credit endpoint. `http://{your-local-host}/api/v1/wallet/bulk-credit`
+- The credit process will start to run and activity_id will come in the response.
+- Any transactions that are failed can be retried from the `http://{your-local-host}/api/v1/wallet/bulk-credit/retry` endpoint. Send the activity_id you got from the bulk credit endpoint as a json post request and it will start the retry process. For ex: `{
+	"activity_id": "14decf5f-a208-43d3-b603-1389951d4a2a"
+}`
 
-## Learning Laravel
+## Resources referred 
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Following links were referred when working on this project to get an idea how ledgers work in fintech use cases.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- https://finlego.com/tpost/c2pjjza3k1-designing-a-real-time-ledger-system-with
+- https://www.linkedin.com/pulse/developing-digital-wallet-app-heres-everything-you-need-austin-roger-wbzzf/
 
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Concept of idempotency
+- https://lukasniessen.medium.com/idempotency-in-system-design-full-example-80e9027e7bea
+- https://blog.bytebytego.com/p/mastering-idempotency-building-reliable
+- https://brandur.org/idempotency-keys
