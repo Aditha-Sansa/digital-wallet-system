@@ -12,6 +12,7 @@
 
 - Make sure you have the required environment above
 - Git pull https://github.com/Aditha-Sansa/digital-wallet-system.git
+- Copy the .env.example into your projects .env (Make sure you have redis set as `CACHE_STORE` among other settings )
 - Run Composer install
 - Run php artisan migrate
 - Dont run any seeders, run the command `php artisan users:seed-and-export`command to seed the users and generate a CSV file of wallet credits for those users. Make sure you have the redis connection working properly. You can add `--total=` flag with a count if you need to seed less than 100K records.
@@ -22,6 +23,7 @@
 - Any transactions that are failed can be retried from the `http://{your-local-host}/api/v1/wallet/bulk-credit/retry` endpoint. Send the activity_id you got from the bulk credit endpoint as a json post request and it will start the retry process. For ex: `{
 	"activity_id": "14decf5f-a208-43d3-b603-1389951d4a2a"
 }`
+- To emulate failed transactions I have added `BULK_CREDIT_FAIL_USER_IDS` variable to .env file. Add one or more uuid's from the csv file you generate and then make request to bulk credit to see jobs failing. When you retry, please clear the `BULK_CREDIT_FAIL_USER_IDS` values so the failed jobs will succeed next time.
 
 ## Resources referred 
 
